@@ -8,9 +8,12 @@ cap = cv2.VideoCapture(0)
 detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
 
-not_emotion_mouth_left = 0
-not_emotion_mouth_center = 0
-not_smile_mouth_right = 0
+not_emotion_smile_left = 0
+not_emotion_smile_center = 0
+not_emotion_smile_right = 0
+not_emotion_eyebrow_left_center = 0
+not_emotion_eyebrow_right_center = 0
+not_emotion_eyebrow_center = 0
 not_emotion_eyebrow_left = 0
 not_emotion_eyebrow_right = 0
 
@@ -19,6 +22,15 @@ while True:
 
     def calculDist(x1, y1, x2, y2):
         return sqrt(pow((y2-y1), 2)+pow((x2-x1), 2))
+
+    def isSmilling():
+        return not_emotion_smile_left > smile_left_marge and not_emotion_smile_center < smile_center and not_emotion_smile_right > smile_right_marge
+
+    def isSad():
+        return not_emotion_smile_left < smile_left_marge and not_emotion_smile_right < smile_right_marge and not_emotion_eyebrow_left < eyebrow_left and not_emotion_eyebrow_right < eyebrow_right
+
+    def isAngry():
+        return not_emotion_eyebrow_left_center > eyebrow_left_center and not_emotion_eyebrow_right_center > eyebrow_right_center and not_emotion_eyebrow_center > eyebrow_center
 
     _,frame = cap.read()
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -40,19 +52,28 @@ while True:
 
 
 
-        smile_left = calculDist(landmarks.part(36).x, landmarks.part(36).y, landmarks.part(48).x, landmarks.part(48).y)
-        smile_center = calculDist(landmarks.part(48).x, landmarks.part(48).y, landmarks.part(54).x, landmarks.part(54).y)
-        smile_right = calculDist(landmarks.part(45).x, landmarks.part(45).y, landmarks.part(54).x, landmarks.part(54).y)
+        smile_left = calculDist(landmarks.part(36).x, landmarks.part(36).y, landmarks.part(48).x, landmarks.part(48).y) * 1000
+        smile_center = calculDist(landmarks.part(48).x, landmarks.part(48).y, landmarks.part(54).x, landmarks.part(54).y) * 1000
+        smile_right = calculDist(landmarks.part(45).x, landmarks.part(45).y, landmarks.part(54).x, landmarks.part(54).y) * 1000
 
-        eyebrow_left = calculDist(landmarks.part(21).x, landmarks.part(21).y, landmarks.part(39).x, landmarks.part(39).y)
-        eyebrow_right = calculDist(landmarks.part(22).x, landmarks.part(22).y, landmarks.part(42).x, landmarks.part(42).y)
+        eyebrow_left_center = calculDist(landmarks.part(21).x, landmarks.part(21).y, landmarks.part(31).x, landmarks.part(31).y) * 1000
+        eyebrow_right_center = calculDist(landmarks.part(22).x, landmarks.part(22).y, landmarks.part(35).x, landmarks.part(35).y) * 1000
+        eyebrow_center = calculDist(landmarks.part(21).x, landmarks.part(21).y, landmarks.part(22).x, landmarks.part(22).y) * 1000
+        eyebrow_left = calculDist(landmarks.part(17).x, landmarks.part(17).y, landmarks.part(5).x, landmarks.part(5).y) * 1000
+        eyebrow_right = calculDist(landmarks.part(26).x, landmarks.part(26).y, landmarks.part(11).x, landmarks.part(11).y) * 1000
 
-        if not_emotion_mouth_left == 0:
-            not_emotion_mouth_left = smile_left
-        if not_emotion_mouth_center == 0:
-            not_emotion_mouth_center = smile_center
-        if not_smile_mouth_right == 0:
-            not_smile_mouth_right = smile_right
+        if not_emotion_smile_left == 0:
+            not_emotion_smile_left = smile_left
+        if not_emotion_smile_center == 0:
+            not_emotion_smile_center = smile_center
+        if not_emotion_smile_right == 0:
+            not_emotion_smile_right = smile_right
+        if not_emotion_eyebrow_left_center == 0:
+            not_emotion_eyebrow_left_center = eyebrow_left_center
+        if not_emotion_eyebrow_right_center == 0:
+            not_emotion_eyebrow_right_center = eyebrow_right_center
+        if not_emotion_eyebrow_center == 0:
+            not_emotion_eyebrow_center = eyebrow_center
         if not_emotion_eyebrow_left == 0:
             not_emotion_eyebrow_left = eyebrow_left
         if not_emotion_eyebrow_right == 0:
@@ -61,12 +82,21 @@ while True:
         smile_left_marge = smile_left + 5
         smile_right_marge = smile_right + 5
 
+        """print("----------------------------------   EMOTION    --------------------------------------------")
+        print(smile_left)
+        print(smile_right)
+        print(smile_center)
+        print("----------------------------------   NOT EMOTION    --------------------------------------------")
+        print(not_emotion_smile_left)
+        print(not_emotion_smile_center)
+        print(not_emotion_smile_center)"""
 
-        if(not_emotion_mouth_left > smile_left_marge and not_emotion_mouth_center < smile_center and not_smile_mouth_right > smile_right_marge):
+
+        if(isSmilling() and not isAngry() and not isSad()):
             print("SMILLING :)")
-        elif(not_emotion_mouth_left < smile_left and not_smile_mouth_right < smile_right and not_emotion_eyebrow_left <= eyebrow_left and not_emotion_eyebrow_right <= eyebrow_right):
+        elif(not isSmilling() and not isAngry() and isSad()):
             print("SAD :(")
-        elif(not_emotion_eyebrow_left > eyebrow_left and not_emotion_eyebrow_right > eyebrow_right):
+        elif(not isSmilling() and isAngry() and not isSad()):
             print("ANGRY >:(")
         else:
             print("NOT EMOTION")
